@@ -12,22 +12,13 @@ import html2canvas from "html2canvas";
 import { supabase } from "./supabase";
 import "./App.css";
 
-const empleados = [
-  "Alex",
-  "Cristhian",
-  "Jose",
-  "Julian",
-  "Sebastian",
-  "Luisa",
-];
+const empleados = ["Alex", "Cristhian", "Jose", "Julian", "Sebastian", "Luisa"];
 
 export default function App() {
   const today = new Date().toISOString().slice(0, 10);
-
   const comprobanteRef = useRef();
 
   const [reservaSeleccionada, setReservaSeleccionada] = useState(null);
-
   const [reservas, setReservas] = useState([]);
 
   const [form, setForm] = useState({
@@ -51,7 +42,6 @@ export default function App() {
   const [busqueda, setBusqueda] = useState("");
   const [fechaFiltro, setFechaFiltro] = useState(today);
 
-  // CARGAR RESERVAS
   useEffect(() => {
     cargarReservas();
   }, []);
@@ -64,26 +54,27 @@ export default function App() {
 
     if (error) {
       console.log(error);
+      alert("Error cargando reservas");
       return;
     }
 
     const reservasFormateadas = data.map((r) => ({
       id: r.id,
-      cliente: r.cliente,
-      telefono: r.telefono,
-      patente: r.patente,
-      vehiculo: r.vehiculo,
-      marca: r.marca,
-      fechaIngreso: r.fecha_ingreso,
-      fechaEgreso: r.fecha_egreso,
-      horaIngreso: r.hora_ingreso,
-      horaEgreso: r.hora_egreso,
-      tipoTicket: r.tipo_ticket,
-      empleado: r.empleado,
-      estado: r.estado,
-      pago: r.pago,
-      monto: r.monto,
-      notas: r.notas,
+      cliente: r.cliente || "",
+      telefono: r.telefono || "",
+      patente: r.patente || "",
+      vehiculo: r.vehiculo || "Auto",
+      marca: r.marca || "",
+      fechaIngreso: r.fecha_ingreso || today,
+      fechaEgreso: r.fecha_egreso || today,
+      horaIngreso: r.hora_ingreso || "",
+      horaEgreso: r.hora_egreso || "",
+      tipoTicket: r.tipo_ticket || "Sistema",
+      empleado: r.empleado || "Sebastian",
+      estado: r.estado || "Reservado",
+      pago: r.pago || "Pendiente",
+      monto: r.monto || 0,
+      notas: r.notas || "",
     }));
 
     setReservas(reservasFormateadas);
@@ -91,13 +82,14 @@ export default function App() {
 
   const reservasFiltradas = useMemo(() => {
     return reservas.filter((r) => {
-      const texto =
-        `${r.cliente} ${r.telefono} ${r.patente} ${r.marca}`.toLowerCase();
+      const texto = `${r.cliente} ${r.telefono} ${r.patente} ${r.marca}`.toLowerCase();
 
-      return (
-        texto.includes(busqueda.toLowerCase()) &&
-        r.fechaIngreso === fechaFiltro
-      );
+      const coincideBusqueda = texto.includes(busqueda.toLowerCase());
+
+      const activaEnFecha =
+        r.fechaIngreso <= fechaFiltro && r.fechaEgreso >= fechaFiltro;
+
+      return coincideBusqueda && activaEnFecha;
     });
   }, [reservas, busqueda, fechaFiltro]);
 
@@ -109,14 +101,8 @@ export default function App() {
     .filter((r) => r.pago === "Pendiente")
     .reduce((a, r) => a + Number(r.monto || 0), 0);
 
-  // GUARDAR
   const guardar = async () => {
-    if (
-      !form.cliente ||
-      !form.patente ||
-      !form.fechaIngreso ||
-      !form.horaIngreso
-    ) {
+    if (!form.cliente || !form.patente || !form.fechaIngreso || !form.horaIngreso) {
       alert("Completá los campos obligatorios.");
       return;
     }
@@ -124,7 +110,7 @@ export default function App() {
     const nuevaReserva = {
       cliente: form.cliente,
       telefono: form.telefono,
-      patente: form.patente,
+      patente: form.patente.toUpperCase(),
       vehiculo: form.vehiculo,
       marca: form.marca,
       fecha_ingreso: form.fechaIngreso,
@@ -139,9 +125,7 @@ export default function App() {
       notas: form.notas,
     };
 
-    const { error } = await supabase
-      .from("reservas")
-      .insert([nuevaReserva]);
+    const { error } = await supabase.from("reservas").insert([nuevaReserva]);
 
     if (error) {
       console.log(error);
@@ -150,7 +134,6 @@ export default function App() {
     }
 
     await cargarReservas();
-
     limpiarFormulario();
   };
 
@@ -174,14 +157,27 @@ export default function App() {
     });
   };
 
-  // ELIMINAR
+  const actualizarPago = async (id, nuevoPago) => {
+    const { error } = await supabase
+      .from("reservas")
+      .update({ pago: nuevoPago })
+      .eq("id", id);
+
+    if (error) {
+      console.log(error);
+      alert("Error actualizando pago");
+      return;
+    }
+
+    setReservas((prev) =>
+      prev.map((r) => (r.id === id ? { ...r, pago: nuevoPago } : r))
+    );
+  };
+
   const eliminar = async (id) => {
     if (!confirm("¿Eliminar reserva?")) return;
 
-    const { error } = await supabase
-      .from("reservas")
-      .delete()
-      .eq("id", id);
+    const { error } = await supabase.from("reservas").delete().eq("id", id);
 
     if (error) {
       alert("Error eliminando");
@@ -191,21 +187,20 @@ export default function App() {
     await cargarReservas();
   };
 
-  // WHATSAPP
   const enviarWhatsApp = (r) => {
     const numero = r.telefono.replace(/\D/g, "");
 
     const mensaje = `
 Hola ${r.cliente}, tu reserva en Parking Thames 350 fue confirmada 🚗
 
-📅 Fecha ingreso: ${r.fechaIngreso}
-🕒 Hora ingreso: ${r.horaIngreso}
+📅 Ingreso: ${r.fechaIngreso} ${r.horaIngreso}
+📅 Egreso: ${r.fechaEgreso} ${r.horaEgreso || "--:--"}
 
 🚘 Vehículo: ${r.vehiculo}
 🏷️ Marca/modelo: ${r.marca}
 🔑 Patente: ${r.patente}
 
-💰 Monto: $${r.monto}
+💰 Monto: $${Number(r.monto || 0).toLocaleString("es-AR")}
 
 📍 Thames 350 - Villa Crespo
 
@@ -218,19 +213,15 @@ Hola ${r.cliente}, tu reserva en Parking Thames 350 fue confirmada 🚗
     );
   };
 
-  // COMPROBANTE
   const descargarComprobante = async (r) => {
     setReservaSeleccionada(r);
 
     setTimeout(async () => {
       const canvas = await html2canvas(comprobanteRef.current);
-
       const link = document.createElement("a");
 
       link.download = `reserva-${r.patente}.png`;
-
       link.href = canvas.toDataURL();
-
       link.click();
     }, 300);
   };
@@ -254,7 +245,6 @@ Hola ${r.cliente}, tu reserva en Parking Thames 350 fue confirmada 🚗
           <div className="icon blue">
             <CalendarDays size={30} />
           </div>
-
           <div>
             <span>Reservas totales</span>
             <strong>{reservasFiltradas.length}</strong>
@@ -265,7 +255,6 @@ Hola ${r.cliente}, tu reserva en Parking Thames 350 fue confirmada 🚗
           <div className="icon purple">
             <DollarSign size={30} />
           </div>
-
           <div>
             <span>Cobrado</span>
             <strong>${cobrado.toLocaleString("es-AR")}</strong>
@@ -276,7 +265,6 @@ Hola ${r.cliente}, tu reserva en Parking Thames 350 fue confirmada 🚗
           <div className="icon orange">
             <Clock size={28} />
           </div>
-
           <div>
             <span>Pendiente</span>
             <strong>${pendiente.toLocaleString("es-AR")}</strong>
@@ -293,25 +281,19 @@ Hola ${r.cliente}, tu reserva en Parking Thames 350 fue confirmada 🚗
           <input
             placeholder="Cliente *"
             value={form.cliente}
-            onChange={(e) =>
-              setForm({ ...form, cliente: e.target.value })
-            }
+            onChange={(e) => setForm({ ...form, cliente: e.target.value })}
           />
 
           <input
             placeholder="Teléfono"
             value={form.telefono}
-            onChange={(e) =>
-              setForm({ ...form, telefono: e.target.value })
-            }
+            onChange={(e) => setForm({ ...form, telefono: e.target.value })}
           />
 
           <div className="two">
             <select
               value={form.vehiculo}
-              onChange={(e) =>
-                setForm({ ...form, vehiculo: e.target.value })
-              }
+              onChange={(e) => setForm({ ...form, vehiculo: e.target.value })}
             >
               <option>Auto</option>
               <option>SUV</option>
@@ -322,18 +304,14 @@ Hola ${r.cliente}, tu reserva en Parking Thames 350 fue confirmada 🚗
             <input
               placeholder="Patente *"
               value={form.patente}
-              onChange={(e) =>
-                setForm({ ...form, patente: e.target.value })
-              }
+              onChange={(e) => setForm({ ...form, patente: e.target.value })}
             />
           </div>
 
           <input
             placeholder="Marca / tipo de auto"
             value={form.marca}
-            onChange={(e) =>
-              setForm({ ...form, marca: e.target.value })
-            }
+            onChange={(e) => setForm({ ...form, marca: e.target.value })}
           />
 
           <div className="two labels">
@@ -344,10 +322,7 @@ Hola ${r.cliente}, tu reserva en Parking Thames 350 fue confirmada 🚗
               type="date"
               value={form.fechaIngreso}
               onChange={(e) =>
-                setForm({
-                  ...form,
-                  fechaIngreso: e.target.value,
-                })
+                setForm({ ...form, fechaIngreso: e.target.value })
               }
             />
 
@@ -355,10 +330,7 @@ Hola ${r.cliente}, tu reserva en Parking Thames 350 fue confirmada 🚗
               type="date"
               value={form.fechaEgreso}
               onChange={(e) =>
-                setForm({
-                  ...form,
-                  fechaEgreso: e.target.value,
-                })
+                setForm({ ...form, fechaEgreso: e.target.value })
               }
             />
           </div>
@@ -371,10 +343,7 @@ Hola ${r.cliente}, tu reserva en Parking Thames 350 fue confirmada 🚗
               type="time"
               value={form.horaIngreso}
               onChange={(e) =>
-                setForm({
-                  ...form,
-                  horaIngreso: e.target.value,
-                })
+                setForm({ ...form, horaIngreso: e.target.value })
               }
             />
 
@@ -382,10 +351,7 @@ Hola ${r.cliente}, tu reserva en Parking Thames 350 fue confirmada 🚗
               type="time"
               value={form.horaEgreso}
               onChange={(e) =>
-                setForm({
-                  ...form,
-                  horaEgreso: e.target.value,
-                })
+                setForm({ ...form, horaEgreso: e.target.value })
               }
             />
           </div>
@@ -395,18 +361,13 @@ Hola ${r.cliente}, tu reserva en Parking Thames 350 fue confirmada 🚗
               type="number"
               placeholder="Monto"
               value={form.monto}
-              onChange={(e) =>
-                setForm({ ...form, monto: e.target.value })
-              }
+              onChange={(e) => setForm({ ...form, monto: e.target.value })}
             />
 
             <select
               value={form.tipoTicket}
               onChange={(e) =>
-                setForm({
-                  ...form,
-                  tipoTicket: e.target.value,
-                })
+                setForm({ ...form, tipoTicket: e.target.value })
               }
             >
               <option>Sistema</option>
@@ -416,12 +377,7 @@ Hola ${r.cliente}, tu reserva en Parking Thames 350 fue confirmada 🚗
 
           <select
             value={form.empleado}
-            onChange={(e) =>
-              setForm({
-                ...form,
-                empleado: e.target.value,
-              })
-            }
+            onChange={(e) => setForm({ ...form, empleado: e.target.value })}
           >
             {empleados.map((emp) => (
               <option key={emp}>{emp}</option>
@@ -431,9 +387,7 @@ Hola ${r.cliente}, tu reserva en Parking Thames 350 fue confirmada 🚗
           <textarea
             placeholder="Notas"
             value={form.notas}
-            onChange={(e) =>
-              setForm({ ...form, notas: e.target.value })
-            }
+            onChange={(e) => setForm({ ...form, notas: e.target.value })}
           />
 
           <button className="save" onClick={guardar}>
@@ -448,22 +402,17 @@ Hola ${r.cliente}, tu reserva en Parking Thames 350 fue confirmada 🚗
             <div className="filters">
               <div className="search">
                 <Search size={16} />
-
                 <input
                   placeholder="Buscar..."
                   value={busqueda}
-                  onChange={(e) =>
-                    setBusqueda(e.target.value)
-                  }
+                  onChange={(e) => setBusqueda(e.target.value)}
                 />
               </div>
 
               <input
                 type="date"
                 value={fechaFiltro}
-                onChange={(e) =>
-                  setFechaFiltro(e.target.value)
-                }
+                onChange={(e) => setFechaFiltro(e.target.value)}
               />
             </div>
           </div>
@@ -473,7 +422,8 @@ Hola ${r.cliente}, tu reserva en Parking Thames 350 fue confirmada 🚗
               <tr>
                 <th>Cliente</th>
                 <th>Vehículo</th>
-                <th>Ingreso</th>
+                <th>Ingreso / Egreso</th>
+                <th>Pago</th>
                 <th>Monto</th>
                 <th>Comprobante</th>
                 <th>WhatsApp</th>
@@ -494,43 +444,49 @@ Hola ${r.cliente}, tu reserva en Parking Thames 350 fue confirmada 🚗
                     {r.vehiculo}
                     <br />
                     <small>{r.marca}</small>
+                    <br />
+                    <small>{r.patente}</small>
                   </td>
 
                   <td>
-                    {r.fechaIngreso}
+                    <b>Ingreso:</b> {r.fechaIngreso}
                     <br />
                     <small>{r.horaIngreso}</small>
+                    <br />
+                    <b>Egreso:</b> {r.fechaEgreso}
+                    <br />
+                    <small>{r.horaEgreso || "--:--"}</small>
                   </td>
 
-                  <td>${r.monto}</td>
+                  <td>
+                    <select
+                      value={r.pago}
+                      onChange={(e) => actualizarPago(r.id, e.target.value)}
+                    >
+                      <option>Pendiente</option>
+                      <option>Pagado</option>
+                    </select>
+                  </td>
+
+                  <td>${Number(r.monto || 0).toLocaleString("es-AR")}</td>
 
                   <td>
                     <button
                       className="voucher-btn"
-                      onClick={() =>
-                        descargarComprobante(r)
-                      }
+                      onClick={() => descargarComprobante(r)}
                     >
                       Comprobante
                     </button>
                   </td>
 
                   <td>
-                    <button
-                      className="wa-btn"
-                      onClick={() =>
-                        enviarWhatsApp(r)
-                      }
-                    >
+                    <button className="wa-btn" onClick={() => enviarWhatsApp(r)}>
                       WhatsApp
                     </button>
                   </td>
 
                   <td>
-                    <button
-                      className="trash"
-                      onClick={() => eliminar(r.id)}
-                    >
+                    <button className="trash" onClick={() => eliminar(r.id)}>
                       <Trash2 size={16} />
                     </button>
                   </td>
@@ -595,12 +551,12 @@ Hola ${r.cliente}, tu reserva en Parking Thames 350 fue confirmada 🚗
 
               <div className="simple-row">
                 <span>Monto:</span>
-                <strong>${reservaSeleccionada.monto}</strong>
+                <strong>
+                  ${Number(reservaSeleccionada.monto || 0).toLocaleString("es-AR")}
+                </strong>
               </div>
 
-              <div className="simple-confirm">
-                RESERVA CONFIRMADA
-              </div>
+              <div className="simple-confirm">RESERVA CONFIRMADA</div>
             </div>
           </div>
         </div>
