@@ -367,3 +367,312 @@ small {
     padding: 20px;
   }
 }
+
+.reservas-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.excel-btn {
+  background: #1d6f42;
+  color: white;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.excel-btn:hover {
+  opacity: 0.9;
+}
+
+.clean-list-title {
+  gap: 16px;
+}
+
+.reservas-table td {
+  vertical-align: middle;
+}
+
+.client-cell b,
+.client-cell small,
+.reservas-table td small {
+  display: block;
+}
+
+.dates-cell span {
+  display: block;
+  line-height: 1.5;
+  white-space: nowrap;
+}
+
+.employee-badge,
+.ticket-badge {
+  display: inline-block;
+  padding: 7px 10px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.employee-badge {
+  background: #eef4ff;
+  color: #1e3a8a;
+}
+
+.ticket-badge.sistema {
+  background: #eef4ff;
+  color: #2563eb;
+}
+
+.ticket-badge.manual {
+  background: #fff7ed;
+  color: #c2410c;
+}
+
+.payment-select {
+  min-width: 115px;
+  padding: 9px 10px;
+  border-radius: 12px;
+  font-weight: 700;
+}
+
+.payment-select.paid {
+  background: #ecfdf5;
+  color: #047857;
+  border-color: #a7f3d0;
+}
+
+.payment-select.pending {
+  background: #fff7ed;
+  color: #c2410c;
+  border-color: #fed7aa;
+}
+
+.amount-cell {
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.actions-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.excel-btn {
+  background: #1d6f42;
+  color: white;
+  border: none;
+  padding: 11px 16px;
+  border-radius: 12px;
+  cursor: pointer;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.excel-btn:hover {
+  opacity: 0.9;
+}
+
+body {
+  margin: 0;
+  font-family: Arial, Helvetica, sans-serif;
+  background: #0f172a;
+  color: #f8fafc;
+}
+
+.page {
+  background: transparent;
+}
+
+.card,
+.stat,
+.list-card,
+.form-card {
+  background: #111c33;
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  box-shadow: 0 20px 45px rgba(0, 0, 0, 0.35);
+  color: #f8fafc;
+}
+
+.top h1,
+.card h2,
+.list-card h2 {
+  color: #f8fafc;
+}
+
+.top p,
+small,
+th {
+  color: #94a3b8;
+}
+
+input,
+select,
+textarea {
+  background: #0f172a;
+  color: #f8fafc;
+  border: 1px solid #334155;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: #94a3b8;
+}
+
+table {
+  color: #f8fafc;
+}
+
+td,
+th {
+  border-color: rgba(148, 163, 184, 0.16);
+}
+
+.search {
+  background: #0f172a;
+  border-color: #334155;
+}
+
+.date-pill,
+.save,
+.voucher-btn {
+  background: #172554;
+}
+
+/* =========================
+   MEJORAS VISUALES PREMIUM
+========================= */
+
+.reservas-table tbody tr {
+  transition: all 0.18s ease;
+}
+
+.reservas-table tbody tr:hover {
+  background: rgba(255, 255, 255, 0.04);
+  transform: scale(1.003);
+}
+
+/* TABLA */
+
+.reservas-table {
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.reservas-table thead tr {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.reservas-table th:first-child {
+  border-top-left-radius: 14px;
+}
+
+.reservas-table th:last-child {
+  border-top-right-radius: 14px;
+}
+
+/* INPUTS */
+
+input:focus,
+select:focus,
+textarea:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+}
+
+/* BOTON ELIMINAR */
+
+.trash:hover {
+  background: #dc2626;
+  color: white;
+  transform: scale(1.05);
+}
+
+/* BOTONES */
+
+.voucher-btn:hover,
+.wa-btn:hover,
+.save:hover,
+.excel-btn:hover {
+  transform: translateY(-1px);
+  transition: 0.18s;
+}
+
+/* SCROLL */
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0f172a;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #334155;
+  border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #475569;
+}
+
+/* TABLA MÁS COMPACTA */
+
+.reservas-table td {
+  padding-top: 22px;
+  padding-bottom: 22px;
+}
+
+/* EFECTO GLASS */
+
+.list-card {
+  backdrop-filter: blur(14px);
+}
+
+/* SOMBRA MÁS SUAVE */
+
+.card,
+.stat {
+  box-shadow:
+    0 8px 30px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.03);
+}
+
+html,
+body,
+#root {
+  width: 100%;
+  min-height: 100%;
+  background: #0f172a !important;
+  overflow-x: hidden;
+}
+
+.page {
+  width: 100%;
+  min-height: 100vh;
+  background: #0f172a !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+body::before,
+body::after,
+.page::before,
+.page::after,
+#root::before,
+#root::after {
+  display: none !important;
+  content: none !important;
+}
+
+* {
+  outline: none;
+}

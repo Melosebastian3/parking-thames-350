@@ -9,8 +9,11 @@ import {
 } from "lucide-react";
 
 import html2canvas from "html2canvas";
+import * as XLSX from "xlsx";
 import { supabase } from "./supabase";
 import "./App.css";
+
+const DELETE_PASSWORD = "Ms94071313381";
 
 const empleados = ["Alex", "Cristhian", "Jose", "Julian", "Sebastian", "Luisa"];
 
@@ -82,10 +85,8 @@ export default function App() {
 
   const reservasFiltradas = useMemo(() => {
     return reservas.filter((r) => {
-      const texto = `${r.cliente} ${r.telefono} ${r.patente} ${r.marca}`.toLowerCase();
-
+      const texto = `${r.cliente} ${r.telefono} ${r.patente} ${r.marca} ${r.empleado} ${r.tipoTicket}`.toLowerCase();
       const coincideBusqueda = texto.includes(busqueda.toLowerCase());
-
       const activaEnFecha =
         r.fechaIngreso <= fechaFiltro && r.fechaEgreso >= fechaFiltro;
 
@@ -175,9 +176,19 @@ export default function App() {
   };
 
   const eliminar = async (id) => {
-    if (!confirm("¿Eliminar reserva?")) return;
+    const password = prompt("Ingrese la contraseña para eliminar esta reserva:");
 
-    const { error } = await supabase.from("reservas").delete().eq("id", id);
+    if (password !== DELETE_PASSWORD) {
+      alert("Contraseña incorrecta. No se eliminó la reserva.");
+      return;
+    }
+
+    if (!confirm("¿Confirmás eliminar esta reserva?")) return;
+
+    const { error } = await supabase
+      .from("reservas")
+      .delete()
+      .eq("id", id);
 
     if (error) {
       alert("Error eliminando");
@@ -185,6 +196,32 @@ export default function App() {
     }
 
     await cargarReservas();
+  };
+
+  const exportarExcel = () => {
+    const datos = reservas.map((r) => ({
+      Cliente: r.cliente,
+      Telefono: r.telefono,
+      Vehiculo: r.vehiculo,
+      Marca: r.marca,
+      Patente: r.patente,
+      FechaIngreso: r.fechaIngreso,
+      HoraIngreso: r.horaIngreso,
+      FechaEgreso: r.fechaEgreso,
+      HoraEgreso: r.horaEgreso,
+      Ticket: r.tipoTicket,
+      Pago: r.pago,
+      Monto: r.monto,
+      Empleado: r.empleado,
+      Estado: r.estado,
+      Notas: r.notas,
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(datos);
+    const workbook = XLSX.utils.book_new();
+
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Reservas");
+    XLSX.writeFile(workbook, "reservas-parking-thames.xlsx");
   };
 
   const enviarWhatsApp = (r) => {
@@ -199,6 +236,7 @@ Hola ${r.cliente}, tu reserva en Parking Thames 350 fue confirmada 🚗
 🚘 Vehículo: ${r.vehiculo}
 🏷️ Marca/modelo: ${r.marca}
 🔑 Patente: ${r.patente}
+🎫 Ticket: ${r.tipoTicket}
 
 💰 Monto: $${Number(r.monto || 0).toLocaleString("es-AR")}
 
@@ -396,7 +434,7 @@ Hola ${r.cliente}, tu reserva en Parking Thames 350 fue confirmada 🚗
         </section>
 
         <section className="card list-card">
-          <div className="list-title">
+          <div className="list-title clean-list-title">
             <h2>Reservas del día</h2>
 
             <div className="filters">
@@ -414,52 +452,73 @@ Hola ${r.cliente}, tu reserva en Parking Thames 350 fue confirmada 🚗
                 value={fechaFiltro}
                 onChange={(e) => setFechaFiltro(e.target.value)}
               />
+
+              <button className="excel-btn" onClick={exportarExcel}>
+                Exportar Excel
+              </button>
             </div>
           </div>
 
-          <table>
+          <table className="reservas-table">
             <thead>
               <tr>
                 <th>Cliente</th>
                 <th>Vehículo</th>
-                <th>Ingreso / Egreso</th>
+                <th>Fechas</th>
+                <th>Empleado</th>
+                <th>Ticket</th>
                 <th>Pago</th>
                 <th>Monto</th>
-                <th>Comprobante</th>
-                <th>WhatsApp</th>
-                <th></th>
+                <th>Acciones</th>
               </tr>
             </thead>
 
             <tbody>
               {reservasFiltradas.map((r) => (
                 <tr key={r.id}>
-                  <td>
+                  <td className="client-cell">
                     <b>{r.cliente}</b>
-                    <br />
                     <small>{r.telefono}</small>
                   </td>
 
                   <td>
-                    {r.vehiculo}
-                    <br />
+                    <b>{r.vehiculo}</b>
                     <small>{r.marca}</small>
-                    <br />
                     <small>{r.patente}</small>
                   </td>
 
+                  <td className="dates-cell">
+                    <span>
+                      <b>Ingreso:</b> {r.fechaIngreso} {r.horaIngreso}
+                    </span>
+                    <span>
+                      <b>Egreso:</b> {r.fechaEgreso} {r.horaEgreso || "--:--"}
+                    </span>
+                  </td>
+
                   <td>
-                    <b>Ingreso:</b> {r.fechaIngreso}
-                    <br />
-                    <small>{r.horaIngreso}</small>
-                    <br />
-                    <b>Egreso:</b> {r.fechaEgreso}
-                    <br />
-                    <small>{r.horaEgreso || "--:--"}</small>
+                    <span className="employee-badge">{r.empleado}</span>
+                  </td>
+
+                  <td>
+                    <span
+                      className={
+                        r.tipoTicket === "Manual"
+                          ? "ticket-badge manual"
+                          : "ticket-badge sistema"
+                      }
+                    >
+                      {r.tipoTicket}
+                    </span>
                   </td>
 
                   <td>
                     <select
+                      className={
+                        r.pago === "Pagado"
+                          ? "payment-select paid"
+                          : "payment-select pending"
+                      }
                       value={r.pago}
                       onChange={(e) => actualizarPago(r.id, e.target.value)}
                     >
@@ -468,27 +527,30 @@ Hola ${r.cliente}, tu reserva en Parking Thames 350 fue confirmada 🚗
                     </select>
                   </td>
 
-                  <td>${Number(r.monto || 0).toLocaleString("es-AR")}</td>
-
-                  <td>
-                    <button
-                      className="voucher-btn"
-                      onClick={() => descargarComprobante(r)}
-                    >
-                      Comprobante
-                    </button>
+                  <td className="amount-cell">
+                    ${Number(r.monto || 0).toLocaleString("es-AR")}
                   </td>
 
                   <td>
-                    <button className="wa-btn" onClick={() => enviarWhatsApp(r)}>
-                      WhatsApp
-                    </button>
-                  </td>
+                    <div className="actions-cell">
+                      <button
+                        className="voucher-btn"
+                        onClick={() => descargarComprobante(r)}
+                      >
+                        Comprobante
+                      </button>
 
-                  <td>
-                    <button className="trash" onClick={() => eliminar(r.id)}>
-                      <Trash2 size={16} />
-                    </button>
+                      <button
+                        className="wa-btn"
+                        onClick={() => enviarWhatsApp(r)}
+                      >
+                        WhatsApp
+                      </button>
+
+                      <button className="trash" onClick={() => eliminar(r.id)}>
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -531,6 +593,11 @@ Hola ${r.cliente}, tu reserva en Parking Thames 350 fue confirmada 🚗
               <div className="simple-row">
                 <span>Marca:</span>
                 <strong>{reservaSeleccionada.marca}</strong>
+              </div>
+
+              <div className="simple-row">
+                <span>Ticket:</span>
+                <strong>{reservaSeleccionada.tipoTicket}</strong>
               </div>
 
               <div className="simple-row">
