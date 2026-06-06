@@ -85,7 +85,7 @@ export default function App() {
 
   const reservasFiltradas = useMemo(() => {
     return reservas.filter((r) => {
-      const texto = `${r.cliente} ${r.telefono} ${r.patente} ${r.marca} ${r.empleado} ${r.tipoTicket}`.toLowerCase();
+      const texto = `${r.cliente} ${r.telefono} ${r.patente} ${r.marca} ${r.empleado} ${r.tipoTicket} ${r.estado}`.toLowerCase();
       const coincideBusqueda = texto.includes(busqueda.toLowerCase());
       const activaEnFecha =
         r.fechaIngreso <= fechaFiltro && r.fechaEgreso >= fechaFiltro;
@@ -172,6 +172,23 @@ export default function App() {
 
     setReservas((prev) =>
       prev.map((r) => (r.id === id ? { ...r, pago: nuevoPago } : r))
+    );
+  };
+
+  const actualizarEstado = async (id, nuevoEstado) => {
+    const { error } = await supabase
+      .from("reservas")
+      .update({ estado: nuevoEstado })
+      .eq("id", id);
+
+    if (error) {
+      console.log(error);
+      alert("Error actualizando estado del vehículo");
+      return;
+    }
+
+    setReservas((prev) =>
+      prev.map((r) => (r.id === id ? { ...r, estado: nuevoEstado } : r))
     );
   };
 
@@ -468,6 +485,7 @@ Hola ${r.cliente}, tu reserva en Parking Thames 350 fue confirmada 🚗
                 <th>Empleado</th>
                 <th>Ticket</th>
                 <th>Pago</th>
+                <th>Estado vehículo</th>
                 <th>Monto</th>
                 <th>Acciones</th>
               </tr>
@@ -524,6 +542,27 @@ Hola ${r.cliente}, tu reserva en Parking Thames 350 fue confirmada 🚗
                     >
                       <option>Pendiente</option>
                       <option>Pagado</option>
+                    </select>
+                  </td>
+
+                  <td>
+                    <select
+                      className={
+                        r.estado === "Ingresó"
+                          ? "estado-select ingresado"
+                          : r.estado === "Retirado"
+                            ? "estado-select retirado"
+                            : r.estado === "Cancelado"
+                              ? "estado-select cancelado"
+                              : "estado-select reservado"
+                      }
+                      value={r.estado}
+                      onChange={(e) => actualizarEstado(r.id, e.target.value)}
+                    >
+                      <option>Reservado</option>
+                      <option>Ingresó</option>
+                      <option>Retirado</option>
+                      <option>Cancelado</option>
                     </select>
                   </td>
 
