@@ -676,3 +676,40 @@ body::after,
 * {
   outline: none;
 }
+
+.estado-select {
+  min-width: 125px;
+  padding: 9px 10px;
+  border-radius: 12px;
+  font-weight: 800;
+  border: 1px solid transparent;
+  cursor: pointer;
+}
+
+/* Reservado = Azul */
+.estado-select.reservado {
+  background: #dbeafe;
+  color: #1d4ed8;
+  border-color: #93c5fd;
+}
+
+/* Ingresó = Verde */
+.estado-select.ingresado {
+  background: #dcfce7;
+  color: #166534;
+  border-color: #86efac;
+}
+
+/* Retirado = Rojo */
+.estado-select.retirado {
+  background: #fee2e2;
+  color: #991b1b;
+  border-color: #fca5a5;
+}
+
+/* Cancelado = Gris */
+.estado-select.cancelado {
+  background: #e5e7eb;
+  color: #374151;
+  border-color: #9ca3af;
+}
